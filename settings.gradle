@@ -1,0 +1,12 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+
+        maven {
+            name("Fabric")
+            url("https://maven.fabricmc.net")
+        }
+    }
+}

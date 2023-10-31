@@ -1,0 +1,104 @@
+name: CI
+on:
+  push:
+    branches:
+      - 'dev/**'
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        java: [ 17 ]
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+      - name: Configuration git
+        run: |
+          git config core.filemode false
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ./.gradle/loom-caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+      - name: Get short commit sha
+        id: get_short_sha
+        run: |
+          short_sha=$(echo ${GITHUB_SHA} | cut -c1-7)
+          echo "short_sha=$short_sha" >> $GITHUB_OUTPUT
+      - name: Get commit count
+        id: get_commit_count
+        run: |
+          commit_count=$(git log | grep -e '^commit [a-zA-Z0-9]*' | wc -l)
+          echo "commit_count=$commit_count" >> $GITHUB_OUTPUT
+      - name: Read Properties mod info
+        id: mod_info
+        uses: christian-draeger/read-properties@1.1.1
+        with:
+          path: gradle.properties
+          properties: 'mod_name mod_version'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew build
+      - name: Upload assets to GitHub Action
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.mod_info.outputs.mod_name }} ${{ steps.mod_info.outputs.mod_version }}.${{ steps.get_commit_count.outputs.commit_count }}+${{ steps.get_short_sha.outputs.short_sha }}
+          path: |
+            LICENSE
+            build/libs/*.jar
+      - name: Publish release to CurseForge & GitHub & Modrinth
+        if: ${{ github.event_name == 'release' }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: Qh5jPI0Z
+          modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
+          curseforge-id: 930507
+          curseforge-token: ${{ secrets.CF_API_TOKEN }}
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+          name: ${{ steps.mod_info.outputs.mod_name }} ${{ steps.mod_info.outputs.mod_version }}.${{ steps.get_commit_count.outputs.commit_count }}
+          version: ${{ steps.mod_info.outputs.mod_version }}.${{ steps.get_commit_count.outputs.commit_count }}
+          version-type: release
+          changelog: ${{ github.event.release.body }}
+          loaders: |
+            fabric
+            quilt
+          game-versions: |
+            1.14.4
+            1.15.2
+            1.16.5
+            1.17.1
+            1.18.2
+            1.19.4
+            1.20.2
+          game-version-filter: any
+          java: |
+            8
+            9
+            10
+            11
+            12
+            13
+            14
+            15
+            16
+            17
+            18
+          retry-attempts: 2
+          retry-delay: 10000

@@ -1,0 +1,73 @@
+plugins {
+    id("fabric-loom").version("1.4-SNAPSHOT")
+    id("maven-publish")
+    id("org.ajoberstar.grgit").version("5.2.1")
+}
+
+dependencies {
+    // Development environment
+    minecraft("com.mojang:minecraft:${project.minecraft_version}")
+    mappings(loom.officialMojangMappings())
+    modApi("net.fabricmc:fabric-loader:${project.fabric_loader_version}")
+}
+
+ext {
+    getVersionGit = { List paths ->
+        if (grgit == null || grgit.head() == null) {
+            return "nogit"
+        }
+
+        List latestCommits = paths.isEmpty() ? grgit.log(maxCommits: 1) : grgit.log(paths: paths, maxCommits: 1)
+        return latestCommits.isEmpty() ? "uncommited" : "${latestCommits.get(0).id.substring(0, 7)}"
+    }
+
+    getVersionPatch = { List paths ->
+        if (grgit == null || grgit.head() == null) {
+            return 0
+        }
+
+        List latestCommits = paths.isEmpty() ? grgit.log() : grgit.log(paths: paths)
+        return latestCommits.size()
+    }
+
+    getModVersion = {
+        return "${project.mod_version}.${getVersionPatch([])}+${getVersionGit([])}"
+    }
+}
+
+group(project.mod_maven_group)
+setVersion(project.getModVersion())
+
+base {
+    archivesBaseName("${project.mod_archives_base_name}")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding("UTF-8")
+}
+
+processResources {
+    from("${rootDir}/LICENSE")
+
+    from("${rootDir}/icon.png") {
+        into("assets/${project.mod_id}")
+    }
+
+    filesMatching("fabric.mod.json") {
+        expand([
+                "mod_description"     : project.mod_description,
+                "mod_homepage"        : project.mod_homepage,
+                "mod_id"              : project.mod_id,
+                "mod_license"         : project.mod_license,
+                "mod_name"            : project.mod_name,
+                "mod_sources"         : project.mod_sources,
+                "mod_version"         : project.mod_version
+        ])
+    }
+}
+
+java {
+    sourceCompatibility(JavaVersion.VERSION_1_8)
+    targetCompatibility(JavaVersion.VERSION_1_8)
+    withSourcesJar()
+}

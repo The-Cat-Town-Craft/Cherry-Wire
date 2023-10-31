@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "icon": "assets/${mod_id}/icon.png",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": [
+    {
+      "name": "The Cat Town Craft",
+      "contact": {
+        "homepage": "https://github.com/The-Cat-Town-Craft"
+      }
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Hendrix-Shen",
+      "contact": {
+        "homepage": "https://github.com/Hendrix-Shen"
+      }
+    }
+  ],
+  "license": "${mod_license}",
+  "environment": "client",
+  "mixins": [
+    "${mod_id}.mixins.json"
+  ],
+  "custom": {
+    "modmenu:clientsideOnly": true
+  }
+}
