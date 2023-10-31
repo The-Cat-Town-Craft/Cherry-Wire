@@ -70,6 +70,7 @@ jobs:
           modrinth-token: ${{ secrets.MODRINTH_API_TOKEN }}
           curseforge-id: 930507
           curseforge-token: ${{ secrets.CF_API_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             build/libs/!(*-@(dev|sources|javadoc)).jar
           name: ${{ steps.mod_info.outputs.mod_name }} ${{ steps.mod_info.outputs.mod_version }}.${{ steps.get_commit_count.outputs.commit_count }}
